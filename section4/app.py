@@ -1,5 +1,5 @@
 from flask import Flask, request
-from flask_restful import Resource, Api
+from flask_restful import Resource, Api, reqparse
 from flask_jwt import JWT, jwt_required
 
 from security import authenticate, identity
@@ -12,16 +12,26 @@ jwt = JWT(app, authenticate, identity)  # /auth
 items = []
 
 class Item(Resource):
+    parser = reqparse.RequestParser()
+    parser.add_argument('price',
+        type=float,
+        required=True,
+        help="This field cannot be left blank!"
+    )
+
     @jwt_required()
     def get(self, name):
         item = next(filter(lambda x: x['name'] == name, items), None)
         return {"item": item}, 200 if item is not None else 404
 
     def post(self, name):
+
         if next(filter(lambda x: x['name'] == name, items), None):
             return {"message": "An item with name '{}' already exists".format(name)}, 400
 
-        data = request.get_json()
+        data = self.parser.parse_args()
+
+        # data = request.get_json()
         # get_json의 옵션으로 force=True, silent=True가 있는데 force=True는 header의
         # content-type을 무시한다.
         # silent=True는 에러가 발생해도 None를 return 한다.
@@ -35,7 +45,8 @@ class Item(Resource):
         return {"message": 'Item deleted'}
 
     def put(self, name):
-        data = request.get_json()
+        data = self.parser.parse_args()
+
         item = next(filter(lambda x: x['name'] == name, items), None)
 
         if item is None:
