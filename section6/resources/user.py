@@ -26,13 +26,8 @@ class UserRegister(Resource):
             return {"message": "A user with that username already exists"}, 400
         # Make sure to have this in front of the connection creatino line
 
-        connection = sqlite3.connect('data.db')
-        cursor = connection.cursor()
+        user = UserModel(**data)
+        user.save_to_db()
 
-        query = "INSERT INTO users VALUES (NULL, ?, ?)"
-        cursor.execute(query, (data['username'], data['password']))
-
-        connection.commit()
-        connection.close()
 
         return {"message": "User created successfully."}, 201
